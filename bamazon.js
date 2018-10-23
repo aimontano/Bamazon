@@ -37,9 +37,34 @@ const validateString = (str) => {
 	return false;
 };
 
+// functions displays data results by given query
+const printData = (query, func) => {
+	db.query(query, (err, res) => {
+		if (err) throw err;	
+
+		let tableItems = [];	
+
+		// push each product as an object to tableItems 
+		res.forEach(item => {
+			tableItems.push({
+				id: item.id,
+				name: item.product_name,
+				department: item.department_name,
+				price: item.price,
+				quantity: item.stock_quantity
+			});
+		})
+		// logs each item as a table
+		console.table(tableItems);	
+		
+		// if user sends a call back function call it here	
+		if(func) func();
+	});	
+};
 
 module.exports = {
 	validateNum,
 	validateString,
-	db
+	db,
+	printData
 }
