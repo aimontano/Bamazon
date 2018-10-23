@@ -1,41 +1,7 @@
 const inquirer = require('inquirer');
-const mysql = require('mysql');
 const cTable = require('console.table');
 
-// connect to database
-const connection = mysql.createConnection({
-	host: 'localhost',
-	port: 3306,
-	user: 'root',
-	password: '',
-	database: 'bamazon'
-});
-
-// function check if you have entered a numeric value
-const validateNum = num => {
-	let reg = /[0-9]/
-	num = parseFloat(num.trim());
-
-	let hasNum = reg.test(num);
-
-	if(hasNum && num >= 0) return true;
-
-	console.log("\nYou must enter a numeric value");
-	return false;	
-}
-
-// functions checks if the input has a string value
-const validateString = (str) => {
-	let reg = /[a-zA-Z]/;
-	str = str.trim().toString();
-
-	let hasLetters = reg.test(str)
-
-	if(str.length >= 2 && hasLetters) return true;
-
-	console.log("\nYou must enter a valid string");
-	return false
-}
+const bamazon = require('./bamazon.js'); 
 
 // ask user for product they would like to buy + quantity
 const getUserInput = () => {
@@ -69,7 +35,7 @@ const getUserInput = () => {
 				addProduct();
 				break;
 			case 'Exit':
-				connection.end();
+				bamazon.db.end();
 				break;
 		}
 	});	
@@ -82,13 +48,13 @@ const addInventory = () => {
 			type: 'input',
 			name: 'productId',
 			message: 'Enter product id',
-			validate: validateNum
+			validate: bamazon.validateNum
 		},
 		{
 			type: 'input',
 			name: 'quantity',
 			message: 'How many items would you like to add?',
-			validate: validateNum
+			validate: bamazon.validateNum
 		}
 	]).then(answer => {
 		updateQuantity(answer.productId, answer.quantity);
@@ -98,7 +64,7 @@ const addInventory = () => {
 // function updates quantity on item if exists
 const updateQuantity = (id, quantity) => {
 	// load item from database by given id
-	connection.query('SELECT * FROM products WHERE ?', {id: id}, (err, res) => {
+	bamazon.db.query('SELECT * FROM products WHERE ?', {id: id}, (err, res) => {
 		if (err) 
 			throw err;
 		// if item not found notify user
@@ -109,7 +75,7 @@ const updateQuantity = (id, quantity) => {
 		else { // otherwise
 			// store new product quantity and update database
 			let newQuantity = (parseInt(res[0].stock_quantity) + parseInt(quantity));
-			connection.query('UPDATE products SET ? WHERE ?', 
+			bamazon.db.query('UPDATE products SET ? WHERE ?', 
 				[
 					{
 						stock_quantity: newQuantity
@@ -164,7 +130,7 @@ const addProduct = () => {
 
 // function inserts item to database table
 const insertProduct = (name, department, price, quantity) => {
-	connection.query("INSERT INTO products SET ?",
+	bamazon.db.query("INSERT INTO products SET ?",
 		{
 			product_name: name,
 			department_name: department,
@@ -181,7 +147,7 @@ const insertProduct = (name, department, price, quantity) => {
 
 // functions displays data results by given query
 const printData = (query) => {
-	connection.query(query, (err, res) => {
+	bamazon.db.query(query, (err, res) => {
 		if (err) throw err;	
 
 		let tableItems = [];	
@@ -207,7 +173,7 @@ const displayProducts = () => {
 }
 
 // connect to database
-connection.connect(err => {
+bamazon.db.connect(err => {
 	if (err) throw err;
 	// if connected display all the products
 	getUserInput();
@@ -215,6 +181,6 @@ connection.connect(err => {
 
 process.on('SIGINT', () => {
 	console.log("Connection ended..");
-	connection.end();
+	bamazon.db.end();
 	process.exit();
 })

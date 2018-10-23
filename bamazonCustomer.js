@@ -1,15 +1,6 @@
 const inquirer = require('inquirer');
-const mysql = require('mysql');
+const bamazon = require('./bamazon.js');
 const cTable = require('console.table');
-
-// connect to database
-const connection = mysql.createConnection({
-	host: 'localhost',
-	port: 3306,
-	user: 'root',
-	password: '',
-	database: 'bamazon'
-});
 
 // ask user for product they would like to buy + quantity
 const getUserInput = () => {
@@ -17,12 +8,14 @@ const getUserInput = () => {
 		{
 			type: 'input',
 			name: 'product_id',
-			message: 'Enter the product id number that you would like to buy.'
+			message: 'Enter the product id number that you would like to buy.',
+			validate: bamazon.validateNum
 		},
 		{
 			type: 'input',
 			name: 'quantity',
-			message: 'How many would you like to buy?'
+			message: 'How many would you like to buy?',
+			validate: bamazon.validateNum
 		}
 	]).then(answer => {
 		let product_id = answer.product_id;
@@ -34,7 +27,7 @@ const getUserInput = () => {
 
 // Updates database base on product and quantity bought
 const updateProductQuantity = (id, quantity) => {
-	connection.query(
+	bamazon.db.query(
 		"UPDATE products SET ? WHERE ?",
 		[
 			{
@@ -51,7 +44,7 @@ const updateProductQuantity = (id, quantity) => {
 
 // Checks if you can buy the product
 const buyProduct = (id, quantity) => {
-	connection.query(
+	bamazon.db.query(
 		'SELECT * FROM products WHERE ?', 
 		{
 			id: id
@@ -69,13 +62,13 @@ const buyProduct = (id, quantity) => {
 				updateProductQuantity(id, updatedQuantity);
 				console.log(`Your're total is ${(res[0].price * quantity).toFixed(2)}`);
 			}
-			connection.end();
+			bamazon.db.end();
 		});
 }
 
 // functions logs each item on the products table
 const displayProducts = () => {
-	connection.query("SELECT * FROM products", (err, res) => {
+	bamazon.db.query("SELECT * FROM products", (err, res) => {
 		if(err) throw err;
 	
 		let tableItems = [];	
@@ -98,7 +91,7 @@ const displayProducts = () => {
 }
 
 // connect to database
-connection.connect(err => {
+bamazon.db.connect(err => {
 	if (err) throw err;
 	// if connected display all the products
 	displayProducts();
