@@ -25,10 +25,9 @@ const getUserInput = () => {
 				displayProducts();
 				break;
 			case 'View low inventory':
-				printData("SELECT  * FROM products WHERE (products.stock_quantity < 5)");
+				bamazon.printData("SELECT  * FROM products WHERE (products.stock_quantity < 5)", getUserInput);
 				break;
 			case 'Add to inventory':
-				// printData("SELECT * FROM products");
 				addInventory();
 				break;
 			case 'Add new product':
@@ -103,25 +102,25 @@ const addProduct = () => {
 			type: 'input',
 			name: 'name',
 			message: "Name of product",
-			validate: validateString
+			validate: bamazon.validateString
 		},
 		{
 			type: 'input',
 			name: 'department',
 			message: 'What department does this item belong to?',
-			validate: validateString
+			validate: bamazon.validateString
 		},
 		{
 			type: 'input',
 			name: 'price',
 			message: "How much does this item cost?",
-			validate: validateNum
+			validate: bamazon.validateNum
 		},
 		{
 			type: 'input',
 			name: 'quantity',
 			message: 'How many items on hand?',
-			validate: validateNum
+			validate: bamazon.validateNum
 		}
 	]).then(answer => {
 		insertProduct(answer.name, answer.department, answer.price, answer.quantity);
@@ -145,31 +144,9 @@ const insertProduct = (name, department, price, quantity) => {
 	)
 }
 
-// functions displays data results by given query
-const printData = (query) => {
-	bamazon.db.query(query, (err, res) => {
-		if (err) throw err;	
-
-		let tableItems = [];	
-
-		// push each product as an object to tableItems 
-		res.forEach(item => {
-			tableItems.push({
-				id: item.id,
-				name: item.product_name,
-				department: item.department_name,
-				price: item.price,
-				quantity: item.stock_quantity
-			});
-		})
-		// logs each item as a table
-		console.table(tableItems);		
-		getUserInput();
-	})	
-}
 
 const displayProducts = () => {
-	printData("SELECT * FROM products");
+	bamazon.printData("SELECT * FROM products", getUserInput);
 }
 
 // connect to database
