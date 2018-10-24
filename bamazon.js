@@ -39,6 +39,7 @@ const validateString = (str) => {
 
 // functions displays data results by given query
 const printData = (query, func) => {
+	if(query == null) query = 'SELECT * FROM products';
 	db.query(query, (err, res) => {
 		if (err) throw err;	
 
@@ -62,9 +63,33 @@ const printData = (query, func) => {
 	});	
 };
 
+
+// function updates quantity on item if exists
+const updateQuantity = (id, quantity, func) => {
+	db.query('UPDATE products SET ? WHERE ?', 
+		[
+			{
+				stock_quantity: quantity
+			},
+			{
+				id: id
+			}
+		],
+		(err, res) => {
+			if(err) {
+				throw new Error("Item does not exist");
+			}
+
+			// if user passes function
+			if(func) func();
+		}
+	)			
+}
+
 module.exports = {
 	validateNum,
 	validateString,
 	db,
-	printData
+	printData,
+	updateQuantity
 }
