@@ -1,6 +1,4 @@
 const inquirer = require('inquirer');
-const cTable = require('console.table');
-
 const bamazon = require('./bamazon.js'); 
 
 // ask user for product they would like to buy + quantity
@@ -56,43 +54,21 @@ const addInventory = () => {
 			validate: bamazon.validateNum
 		}
 	]).then(answer => {
-		updateQuantity(answer.productId, answer.quantity);
+		bamazon.db.query('SELECT * FROM products WHERE ?', {id: parseInt(answer.productId)}, (err, res) => {
+			if (err) 
+				throw err;
+			// if item not found notify user
+			if (res[0] === undefined) {
+				displayProducts();
+				 console.log("Item does not exist try again...");
+			}
+			else { // otherwise
+				// store new product quantity and update database
+				let newQuantity = (parseInt(res[0].stock_quantity) + parseInt(answer.quantity));
+				bamazon.updateQuantity(answer.productId, newQuantity, displayProducts);
+			}
+		})		
 	});
-}
-
-// function updates quantity on item if exists
-const updateQuantity = (id, quantity) => {
-	// load item from database by given id
-	bamazon.db.query('SELECT * FROM products WHERE ?', {id: id}, (err, res) => {
-		if (err) 
-			throw err;
-		// if item not found notify user
-		if (res[0] === undefined) {
-			displayProducts();
-		 	console.log("Item does not exist try again...");
-		}
-		else { // otherwise
-			// store new product quantity and update database
-			let newQuantity = (parseInt(res[0].stock_quantity) + parseInt(quantity));
-			bamazon.db.query('UPDATE products SET ? WHERE ?', 
-				[
-					{
-						stock_quantity: newQuantity
-					},
-					{
-						id: id
-					}
-				],
-				(err, res) => {
-					if(err) {
-						throw new Error("Item does not exist");
-					}
-					console.log("Item updated");
-					displayProducts();
-				}
-			)			
-		}
-	})
 }
 
 // function gets user input for new product
@@ -146,7 +122,7 @@ const insertProduct = (name, department, price, quantity) => {
 
 
 const displayProducts = () => {
-	bamazon.printData("SELECT * FROM products", getUserInput);
+	bamazon.printData(null, getUserInput);
 }
 
 // connect to database
@@ -160,4 +136,4 @@ process.on('SIGINT', () => {
 	console.log("Connection ended..");
 	bamazon.db.end();
 	process.exit();
-})
+});
